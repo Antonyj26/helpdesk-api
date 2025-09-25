@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  tech
+  client
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  encerrado
+}
+
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  role Role @default(client)
+  imageUrl String?
+  active Boolean @default(true)
+
+  // Relacionamentos com os tickets
+  ticketAsClient Ticket[] @relation("ClientTickets")
+  ticketAsTech Ticket[] @relation("TechTickets")
+
+  // Relacionamentos com a tabela de horários dos técnicos
+  techAvailability TechAvailability?
+
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model TechAvailability {
+  id String @id @default(uuid())
+  techId String @unique
+  availableHours String[]
+
+  //Relacionamentos 1:1 com User
+  tech User @relation(fields: [techId], references: [id])
+
+  @@map("tech_availabilities")
+}
+
+model Service {
+  id String @id @default(uuid())
+  name String
+  price Float
+  active Boolean @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  // Relacionamento N:N com Ticket via TicketServices
+  ticketsServices TicketServices[]
+
+  @@map("services")
+}
+
+model Ticket {
+  id String @id @default(uuid())
+  clientId String
+  techId String
+  status TicketStatus @default(open)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  // Relacionamento N:N com serviços
+  services TicketServices[]
+
+  // Relacionamento com a tabela de user e os tickets abertos
+  client User @relation("ClientTickets", fields: [clientId], references: [id])
+  tech User @relation("TechTickets", fields: [techId], references: [id])
+
+  @@map("tickets")
+ }
+
+
+ model TicketServices {
+  id String @id @default(uuid())
+  ticketId String
+  serviceId String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relacionamentos N:1
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@map("ticket_services")
+ }

@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { sessionRoute } from "./SessionsRoute";
-import { usersRoutes } from "./UsersRoutes";
+import { clientRoutes } from "./ClientRoutes";
+import { adminRoutes } from "./AdminRoutes";
 
 export const route = Router();
 
 route.use("/sessions", sessionRoute);
-route.use("/users", usersRoutes);
+route.use("/client", clientRoutes);
+route.use("/admin", adminRoutes);

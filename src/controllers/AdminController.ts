@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { hash } from "bcrypt";
+import { TicketStatus } from "@prisma/client";
 
 class AdminController {
   async createTech(request: Request, response: Response) {
@@ -270,6 +271,41 @@ class AdminController {
     return response.json({
       message: "Esses são todos os tickets do sistema",
       allTickets,
+    });
+  }
+
+  async updateTicket(request: Request, response: Response) {
+    const paramsSchema = z.object({
+      ticket_id: z.string().uuid(),
+    });
+
+    const { ticket_id } = paramsSchema.parse(request.params);
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticket_id } });
+
+    if (!ticket) {
+      throw new AppError("Ticket não encontrado", 404);
+    }
+
+    const bodySchema = z.object({
+      status: z.enum([
+        TicketStatus.open,
+        TicketStatus.in_progress,
+        TicketStatus.encerrado,
+      ]),
+    });
+
+    const { status } = bodySchema.parse(request.body);
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticket_id },
+      data: { status: status },
+      include: { services: { include: { service: true } } },
+    });
+
+    return response.json({
+      message: "Status do ticket atualizado com sucesso",
+      updatedTicket,
     });
   }
 }

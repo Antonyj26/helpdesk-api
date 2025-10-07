@@ -12,5 +12,7 @@ techRoutes.use(verifyUserAuthorization(["tech"]));
 techRoutes.patch("/profile", techContoller.update);
 techRoutes.get("/", techContoller.show);
 techRoutes.get("/ticket", techContoller.indexTickets);
+techRoutes.patch("/ticket/services", techContoller.updateServiceInTicket);
+techRoutes.patch("/ticket/:ticket_id/status", techContoller.updateTicket);
 
 export { techRoutes };

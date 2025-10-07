@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import { z } from "zod";
+import { includes, z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { compare, hash } from "bcrypt";
+import { TicketStatus } from "@prisma/client";
 
 class techController {
   async update(request: Request, response: Response) {
@@ -103,6 +104,97 @@ class techController {
           ? "Você não tem tickets"
           : "Esses são seus tickets",
       ticketsFormated,
+    });
+  }
+
+  async updateServiceInTicket(request: Request, response: Response) {
+    const bodySchema = z.object({
+      ticket_id: z.string().uuid(),
+      service_id: z.string().uuid(),
+    });
+
+    const { ticket_id, service_id } = bodySchema.parse(request.body);
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticket_id },
+      include: { services: true },
+    });
+
+    if (!ticket || ticket.status === "encerrado") {
+      throw new AppError("Ticket não encontrado ou encerrado", 404);
+    }
+
+    const service = await prisma.service.findUnique({
+      where: { id: service_id },
+    });
+
+    if (!service || !service.active) {
+      throw new AppError("Service não encontrado ou inativo", 404);
+    }
+
+    if (ticket.techId !== request.user.id) {
+      throw new AppError(
+        "Você não tem permissaão para editar este ticket",
+        401
+      );
+    }
+
+    const alreadyConnected = ticket.services.some((s) => s.id === service_id);
+
+    if (alreadyConnected) {
+      throw new AppError("Serviço já está incluso neste ticket", 400);
+    }
+
+    const ticketService = await prisma.ticketServices.create({
+      data: {
+        ticketId: ticket_id,
+        serviceId: service_id,
+      },
+    });
+
+    return response.json({
+      message: "Serviço adicionado ao ticket",
+      ticketService,
+    });
+  }
+
+  async updateTicket(request: Request, response: Response) {
+    const paramsSchema = z.object({
+      ticket_id: z.string().uuid(),
+    });
+
+    const { ticket_id } = paramsSchema.parse(request.params);
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticket_id },
+    });
+
+    if (!ticket || ticket.status === "encerrado") {
+      throw new AppError("Ticket não encontrado ou encerrado", 404);
+    }
+
+    const bodySchema = z.object({
+      status: z.enum([TicketStatus.in_progress, TicketStatus.encerrado]),
+    });
+
+    const { status } = bodySchema.parse(request.body);
+
+    if (ticket.techId !== request.user.id) {
+      throw new AppError(
+        "Você não tem autorização para mudar status desse ticket",
+        401
+      );
+    }
+
+    const updatedTicket = await prisma.ticket.update({
+      where: { id: ticket_id },
+      data: { status: status },
+      include: { services: { include: { service: true } } },
+    });
+
+    return response.json({
+      message: "Ticket atualizado com sucesso",
+      updatedTicket,
     });
   }
 }

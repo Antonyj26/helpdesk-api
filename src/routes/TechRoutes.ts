@@ -11,5 +11,6 @@ techRoutes.use(verifyUserAuthorization(["tech"]));
 
 techRoutes.patch("/profile", techContoller.update);
 techRoutes.get("/", techContoller.show);
+techRoutes.get("/ticket", techContoller.indexTickets);
 
 export { techRoutes };

@@ -263,6 +263,15 @@ class AdminController {
       availability,
     });
   }
+
+  async indexTickets(request: Request, response: Response) {
+    const allTickets = await prisma.ticket.findMany();
+
+    return response.json({
+      message: "Esses são todos os tickets do sistema",
+      allTickets,
+    });
+  }
 }
 
 export { AdminController };

@@ -193,7 +193,34 @@ class ClientController {
       },
     });
 
-    return response.json({ message: "Ticket criado com sucesso", newTicket });
+    return response
+      .status(201)
+      .json({ message: "Ticket criado com sucesso", newTicket });
+  }
+
+  async indexTicketClient(request: Request, response: Response) {
+    const tickets = await prisma.ticket.findMany({
+      where: { clientId: request.user.id },
+      include: { services: { include: { service: true } } },
+    });
+
+    const ticketsFormated = tickets.map((ticket) => ({
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      selectedHour: ticket.selectedHour,
+      createdAt: ticket.createdAt,
+      services: ticket.services.map((s) => s.service),
+    }));
+
+    return response.json({
+      message:
+        ticketsFormated.length === 0
+          ? "Você não tem tickets"
+          : "Esses são seus tickets",
+      ticketsFormated,
+    });
   }
 }
 

@@ -80,6 +80,31 @@ class techController {
 
     response.json(tech);
   }
+
+  async indexTickets(request: Request, response: Response) {
+    const ticketsAssignedToMe = await prisma.ticket.findMany({
+      where: { techId: request.user.id },
+      include: { services: { include: { service: true } } },
+    });
+
+    const ticketsFormated = ticketsAssignedToMe.map((ticket) => ({
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      selectedHour: ticket.selectedHour,
+      createdAt: ticket.createdAt,
+      services: ticket.services.map((s) => s.service),
+    }));
+
+    return response.json({
+      message:
+        ticketsFormated.length === 0
+          ? "Você não tem tickets"
+          : "Esses são seus tickets",
+      ticketsFormated,
+    });
+  }
 }
 
 export { techController };

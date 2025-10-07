@@ -69,8 +69,11 @@ model Service {
 
 model Ticket {
   id String @id @default(uuid())
+  title String
+  description String
   clientId String
   techId String
+  selectedHour String
   status TicketStatus @default(open)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")

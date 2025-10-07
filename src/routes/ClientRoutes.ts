@@ -12,5 +12,7 @@ clientRoutes.use(ensureAuthenticated);
 clientRoutes.use(verifyUserAuthorization(["client"]));
 
 clientRoutes.patch("/profile", clientController.updateClient);
+clientRoutes.get("/", clientController.showClient);
+clientRoutes.post("/ticket", clientController.createTicket);
 
 export { clientRoutes };

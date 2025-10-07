@@ -16,4 +16,5 @@ adminRoutes.get("/service", adminController.indexServices);
 adminRoutes.patch("/service/:service_id", adminController.updateService);
 adminRoutes.get("/client", adminController.clientIndex);
 adminRoutes.patch("/client/:client_id", adminController.updateClient);
+adminRoutes.post("/tech/availability", adminController.createTechAvailability);
 export { adminRoutes };

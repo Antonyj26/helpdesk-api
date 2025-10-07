@@ -3,7 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { compare, hash } from "bcrypt";
-import { da } from "zod/locales";
 
 class ClientController {
   async createClient(request: Request, response: Response) {
@@ -103,6 +102,98 @@ class ClientController {
     });
 
     return response.json({ updatedClient, message: "Atualizado com sucesso" });
+  }
+
+  async showClient(request: Request, response: Response) {
+    const client = await prisma.user.findUnique({
+      where: { id: request.user.id },
+    });
+
+    response.json(client);
+  }
+
+  async createTicket(request: Request, response: Response) {
+    const bodySchema = z.object({
+      title: z
+        .string()
+        .trim()
+        .min(6, { message: "Título deve conter pelo menos 6 caracteres" }),
+      description: z
+        .string()
+        .trim()
+        .min(8, { message: "Descrição deve conter pelo menos 8 caracteres" }),
+      tech_id: z.string().uuid(),
+      selectedHour: z.string().regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+        message: "Horário deve estar no formato HH:MM",
+      }),
+      service_id: z.string().uuid(),
+    });
+
+    const { title, description, tech_id, selectedHour, service_id } =
+      bodySchema.parse(request.body);
+
+    const { id: client_id } = request.user;
+
+    const tech = await prisma.user.findUnique({
+      where: { id: tech_id },
+    });
+
+    if (!tech || !tech.active) {
+      throw new AppError("Tech not found", 404);
+    }
+
+    const service = await prisma.service.findUnique({
+      where: { id: service_id },
+    });
+
+    if (!service || !service.active) {
+      throw new AppError("Service not found", 404);
+    }
+
+    const availability = await prisma.techAvailability.findUnique({
+      where: { techId: tech_id },
+    });
+
+    if (!availability || !availability.availableHours.includes(selectedHour)) {
+      throw new AppError("Horário indisponível para esse técnico", 400);
+    }
+
+    const conflict = await prisma.ticket.findFirst({
+      where: {
+        techId: tech_id,
+        selectedHour,
+        status: "open",
+      },
+    });
+
+    if (conflict) {
+      throw new AppError(
+        "Esse horário já está ocupado para o técnico selecionado",
+        400
+      );
+    }
+
+    const newTicket = await prisma.ticket.create({
+      data: {
+        title,
+        description,
+        techId: tech_id,
+        clientId: client_id,
+        selectedHour,
+      },
+      include: {
+        services: true,
+      },
+    });
+
+    await prisma.ticketServices.create({
+      data: {
+        ticketId: newTicket.id,
+        serviceId: service_id,
+      },
+    });
+
+    return response.json({ message: "Ticket criado com sucesso", newTicket });
   }
 }
 

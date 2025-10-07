@@ -39,7 +39,19 @@ class AdminController {
   }
 
   async indexTechs(request: Request, response: Response) {
-    const techs = await prisma.user.findMany({ where: { role: "tech" } });
+    const techs = await prisma.user.findMany({
+      where: { role: "tech" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        techAvailability: {
+          select: {
+            availableHours: true,
+          },
+        },
+      },
+    });
 
     return response.json(techs);
   }
@@ -204,6 +216,52 @@ class AdminController {
     });
 
     return response.json(updatedClient);
+  }
+
+  async createTechAvailability(request: Request, response: Response) {
+    const bodySchema = z.object({
+      tech_id: z.string().uuid(),
+      availableHours: z
+        .array(
+          z.string().regex(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
+            message: "Horário deve estar no formato HH:MM",
+          })
+        )
+        .nonempty("Lista de horários não pode estar vazia"),
+    });
+
+    const { tech_id, availableHours } = bodySchema.parse(request.body);
+
+    const tech = await prisma.user.findUnique({ where: { id: tech_id } });
+
+    if (!tech) {
+      throw new AppError("Tech not found", 404);
+    }
+
+    const existingAvailability = await prisma.techAvailability.findUnique({
+      where: { techId: tech_id },
+    });
+
+    let availability;
+
+    if (existingAvailability) {
+      availability = await prisma.techAvailability.update({
+        where: { techId: tech_id },
+        data: { availableHours },
+      });
+    } else {
+      availability = await prisma.techAvailability.create({
+        data: {
+          techId: tech_id,
+          availableHours,
+        },
+      });
+    }
+
+    return response.status(200).json({
+      message: "Disponibilidade do técnico atualizada com sucesso",
+      availability,
+    });
   }
 }
 

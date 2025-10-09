@@ -16,6 +16,7 @@ adminRoutes.get("/service", adminController.indexServices);
 adminRoutes.patch("/service/:service_id", adminController.updateService);
 adminRoutes.get("/client", adminController.clientIndex);
 adminRoutes.patch("/client/:client_id", adminController.updateClient);
+adminRoutes.delete("/client/delete/:client_id", adminController.deleteClient);
 adminRoutes.post("/tech/availability", adminController.createTechAvailability);
 adminRoutes.get("/ticket", adminController.indexTickets);
 adminRoutes.patch("/ticket/:ticket_id/status", adminController.updateTicket);

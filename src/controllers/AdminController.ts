@@ -219,6 +219,45 @@ class AdminController {
     return response.json(updatedClient);
   }
 
+  async deleteClient(request: Request, response: Response) {
+    try {
+      const paramSchema = z.object({
+        client_id: z.string().uuid(),
+      });
+
+      const { client_id } = paramSchema.parse(request.params);
+
+      const client = await prisma.user.findUnique({
+        where: { id: client_id },
+      });
+
+      if (!client) {
+        throw new AppError("Cliente não encontrado", 404);
+      }
+
+      const tickets = await prisma.ticket.findMany({
+        where: { clientId: client_id },
+        select: { id: true },
+      });
+
+      const ticketsId = tickets.map((t) => t.id);
+
+      if (ticketsId.length > 0) {
+        await prisma.ticketServices.deleteMany({
+          where: { ticketId: { in: ticketsId } },
+        });
+
+        await prisma.ticket.deleteMany({ where: { id: { in: ticketsId } } });
+      }
+
+      await prisma.user.delete({ where: { id: client_id } });
+
+      return response.json({ message: "Cliente excluído com sucesso" });
+    } catch (error) {
+      return response.json(error);
+    }
+  }
+
   async createTechAvailability(request: Request, response: Response) {
     const bodySchema = z.object({
       tech_id: z.string().uuid(),

@@ -15,5 +15,6 @@ clientRoutes.patch("/profile", clientController.updateClient);
 clientRoutes.get("/", clientController.showClient);
 clientRoutes.post("/ticket", clientController.createTicket);
 clientRoutes.get("/ticket", clientController.indexTicketClient);
+clientRoutes.delete("/delete", clientController.deleteClient);
 
 export { clientRoutes };

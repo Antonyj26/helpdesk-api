@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
-import { z } from "zod";
+import { includes, z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { hash } from "bcrypt";
 import { TicketStatus } from "@prisma/client";
+import { title } from "process";
 
 class AdminController {
   async createTech(request: Request, response: Response) {
@@ -305,11 +306,31 @@ class AdminController {
   }
 
   async indexTickets(request: Request, response: Response) {
-    const allTickets = await prisma.ticket.findMany();
+    const allTickets = await prisma.ticket.findMany({
+      include: {
+        client: { select: { name: true } },
+        tech: { select: { name: true } },
+        services: {
+          select: { service: { select: { name: true, price: true } } },
+        },
+      },
+    });
+
+    const formattedTickets = allTickets.map((ticket) => ({
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      updatedAt: ticket.updatedAt,
+      client: ticket.client.name,
+      tech: ticket.tech.name,
+      services: ticket.services.map((s) => s.service.name),
+      price: ticket.services.map((p) => p.service.price),
+    }));
 
     return response.json({
       message: "Esses são todos os tickets do sistema",
-      allTickets,
+      allTickets: formattedTickets,
     });
   }
 

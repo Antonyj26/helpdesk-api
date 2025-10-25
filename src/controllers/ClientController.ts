@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { compare, hash } from "bcrypt";
+import { techController } from "./TechController";
 
 class ClientController {
   async createClient(request: Request, response: Response) {
@@ -201,7 +202,14 @@ class ClientController {
   async indexTicketClient(request: Request, response: Response) {
     const tickets = await prisma.ticket.findMany({
       where: { clientId: request.user.id },
-      include: { services: { include: { service: true } } },
+
+      include: {
+        services: {
+          include: { service: { select: { price: true, name: true } } },
+        },
+        client: { select: { name: true } },
+        tech: { select: { name: true } },
+      },
     });
 
     const ticketsFormated = tickets.map((ticket) => ({
@@ -210,8 +218,11 @@ class ClientController {
       description: ticket.description,
       status: ticket.status,
       selectedHour: ticket.selectedHour,
-      createdAt: ticket.createdAt,
-      services: ticket.services.map((s) => s.service),
+      updatedAt: ticket.updatedAt,
+      services: ticket.services.map((s) => s.service.name),
+      price: ticket.services.map((p) => p.service.price),
+      client: ticket.client.name,
+      tech: ticket.tech.name,
     }));
 
     return response.json({

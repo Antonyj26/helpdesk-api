@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { includes, z } from "zod";
+import { email, includes, z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { hash } from "bcrypt";
@@ -55,7 +55,14 @@ class AdminController {
       },
     });
 
-    return response.json(techs);
+    const techsFormatted = techs.map((tech) => ({
+      id: tech.id,
+      name: tech.name,
+      email: tech.email,
+      availableHours: tech.techAvailability?.availableHours,
+    }));
+
+    return response.json({ techs: techsFormatted });
   }
 
   async updateTech(request: Request, response: Response) {
@@ -129,7 +136,14 @@ class AdminController {
   async indexServices(request: Request, response: Response) {
     const services = await prisma.service.findMany();
 
-    return response.json(services);
+    const servicesFormatted = services.map((service) => ({
+      id: service.id,
+      name: service.name,
+      price: service.price,
+      status: service.active,
+    }));
+
+    return response.json({ services: servicesFormatted });
   }
 
   async updateService(request: Request, response: Response) {
@@ -175,9 +189,17 @@ class AdminController {
   }
 
   async clientIndex(request: Request, response: Response) {
-    const clients = await prisma.user.findMany({ where: { role: "client" } });
+    const clients = await prisma.user.findMany({
+      where: { role: "client" },
+      select: { name: true, email: true },
+    });
 
-    return response.json(clients);
+    const clientsFormatted = clients.map((client) => ({
+      name: client.name,
+      email: client.email,
+    }));
+
+    return response.json({ clients: clientsFormatted });
   }
 
   async updateClient(request: Request, response: Response) {

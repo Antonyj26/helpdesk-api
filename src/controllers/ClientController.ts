@@ -262,6 +262,39 @@ class ClientController {
 
     return response.json({ message: "Cliente excluído com sucesso" });
   }
+
+  async indexServices(request: Request, response: Response) {
+    const services = await prisma.service.findMany({
+      select: { id: true, name: true, price: true },
+    });
+
+    const servicesFormatted = services.map((service) => ({
+      id: service.id,
+      name: service.name,
+      price: service.price,
+    }));
+
+    return response.json({ services: servicesFormatted });
+  }
+
+  async indexTechs(request: Request, response: Response) {
+    const techs = await prisma.user.findMany({
+      where: { role: "tech" },
+      select: {
+        id: true,
+        name: true,
+        techAvailability: { select: { availableHours: true } },
+      },
+    });
+
+    const formattedTechs = techs.map((tech) => ({
+      id: tech.id,
+      name: tech.name,
+      techAvailability: tech.techAvailability?.availableHours,
+    }));
+
+    return response.json({ techs: formattedTechs });
+  }
 }
 
 export { ClientController };

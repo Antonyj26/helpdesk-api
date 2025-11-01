@@ -16,5 +16,7 @@ clientRoutes.get("/", clientController.showClient);
 clientRoutes.post("/ticket", clientController.createTicket);
 clientRoutes.get("/ticket", clientController.indexTicketClient);
 clientRoutes.delete("/delete", clientController.deleteClient);
+clientRoutes.get("/service", clientController.indexServices);
+clientRoutes.get("/techs", clientController.indexTechs);
 
 export { clientRoutes };

@@ -331,7 +331,7 @@ class AdminController {
     const allTickets = await prisma.ticket.findMany({
       include: {
         client: { select: { name: true } },
-        tech: { select: { name: true } },
+        tech: { select: { id: true, name: true } },
         services: {
           select: { service: { select: { name: true, price: true } } },
         },
@@ -345,6 +345,7 @@ class AdminController {
       status: ticket.status,
       updatedAt: ticket.updatedAt,
       client: ticket.client.name,
+      tech_id: ticket.techId,
       tech: ticket.tech.name,
       services: ticket.services.map((s) => s.service.name),
       price: ticket.services.map((p) => p.service.price),
@@ -389,6 +390,34 @@ class AdminController {
       message: "Status do ticket atualizado com sucesso",
       updatedTicket,
     });
+  }
+
+  async deleteTicket(request: Request, response: Response) {
+    try {
+      const paramsSchema = z.object({
+        ticket_id: z.string().uuid(),
+      });
+
+      const { ticket_id } = paramsSchema.parse(request.params);
+
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticket_id },
+      });
+
+      if (!ticket) {
+        throw new AppError("Ticket não localizado", 404);
+      }
+
+      await prisma.ticketServices.deleteMany({
+        where: { ticketId: ticket_id },
+      });
+
+      await prisma.ticket.delete({ where: { id: ticket_id } });
+
+      return response.json({ message: "Ticket excluído com sucesso" });
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
 

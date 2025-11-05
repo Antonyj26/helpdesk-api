@@ -3,7 +3,6 @@ import { z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { compare, hash } from "bcrypt";
-import { techController } from "./TechController";
 
 class ClientController {
   async createClient(request: Request, response: Response) {
@@ -85,7 +84,7 @@ class ClientController {
 
     const dataToUptdated: { name?: string; password?: string } = {};
 
-    if (name) dataToUptdated.name;
+    if (name) dataToUptdated.name = name;
     if (newPassword) dataToUptdated.password = await hash(newPassword, 8);
 
     if (Object.keys(dataToUptdated).length === 0) {
@@ -181,6 +180,7 @@ class ClientController {
         techId: tech_id,
         clientId: client_id,
         selectedHour,
+        status: "open",
       },
       include: {
         services: { include: { service: true } },
@@ -232,6 +232,33 @@ class ClientController {
           : "Esses são seus tickets",
       ticketsFormated,
     });
+  }
+
+  async showTechTickets(request: Request, response: Response) {
+    const querySchema = z.object({
+      status: z.enum(["open", "in_progress", "encerrado"]).optional(),
+    });
+
+    const { status } = querySchema.parse(request.query);
+
+    const paramsSchema = z.object({
+      tech_id: z.string().uuid({}),
+    });
+
+    const { tech_id } = paramsSchema.parse(request.params);
+
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        techId: tech_id,
+        status: status,
+      },
+      include: {
+        services: { include: { service: true } },
+        client: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    return response.json({ tickets });
   }
 
   async deleteClient(request: Request, response: Response) {

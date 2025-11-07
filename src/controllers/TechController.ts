@@ -85,26 +85,23 @@ class techController {
   async indexTickets(request: Request, response: Response) {
     const ticketsAssignedToMe = await prisma.ticket.findMany({
       where: { techId: request.user.id },
-      include: { services: { include: { service: true } } },
+      include: {
+        services: { include: { service: true } },
+        client: { select: { name: true } },
+      },
     });
 
     const ticketsFormated = ticketsAssignedToMe.map((ticket) => ({
       id: ticket.id,
+      createdAt: ticket.createdAt.toLocaleDateString("pt-BR"),
       title: ticket.title,
-      description: ticket.description,
+      services: ticket.services.map((s) => s.service.name),
+      price: ticket.services.map((s) => s.service.price),
+      client: ticket.client.name,
       status: ticket.status,
-      selectedHour: ticket.selectedHour,
-      createdAt: ticket.createdAt,
-      services: ticket.services.map((s) => s.service),
     }));
 
-    return response.json({
-      message:
-        ticketsFormated.length === 0
-          ? "Você não tem tickets"
-          : "Esses são seus tickets",
-      ticketsFormated,
-    });
+    return response.json({ tickets: ticketsFormated });
   }
 
   async updateServiceInTicket(request: Request, response: Response) {

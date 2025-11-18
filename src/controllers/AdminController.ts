@@ -162,30 +162,39 @@ class AdminController {
     }
 
     const bodySchema = z.object({
-      name: z
-        .string()
-        .trim()
-        .min(3, { message: "Nome deve ter pelo menos 3 caracteres" })
-        .optional(),
-      price: z
-        .number({ message: "Preço inválido" })
-        .positive({ message: "Preço deve ser maior do que 0" })
-        .optional(),
-      active: z.boolean().optional(),
+      status: z.boolean().optional(),
     });
 
-    const { name, price, active } = bodySchema.parse(request.body);
+    const { status } = bodySchema.parse(request.body);
 
     const serviceUpdated = await prisma.service.update({
       where: { id: service_id },
       data: {
-        name,
-        price,
-        active: active ?? true,
+        active: status ?? true,
       },
     });
 
     return response.json(serviceUpdated);
+  }
+
+  async deleteService(request: Request, response: Response) {
+    const paramSchema = z.object({
+      service_id: z.string().uuid(),
+    });
+
+    const { service_id } = paramSchema.parse(request.params);
+
+    const service = await prisma.service.findUnique({
+      where: { id: service_id },
+    });
+
+    if (!service) {
+      throw new AppError("Serviço não encontrado", 404);
+    }
+
+    await prisma.service.delete({ where: { id: service_id } });
+
+    return response.json({ message: "Serviço excluído com sucesso" });
   }
 
   async clientIndex(request: Request, response: Response) {

@@ -14,5 +14,7 @@ techRoutes.get("/", techContoller.show);
 techRoutes.get("/ticket", techContoller.indexTickets);
 techRoutes.patch("/ticket/services", techContoller.updateServiceInTicket);
 techRoutes.patch("/ticket/:ticket_id/status", techContoller.updateTicket);
+techRoutes.get("/ticket/:ticket_id", techContoller.showTicket);
+techRoutes.get("/services", techContoller.indexServices);
 
 export { techRoutes };

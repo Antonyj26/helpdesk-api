@@ -200,10 +200,11 @@ class AdminController {
   async clientIndex(request: Request, response: Response) {
     const clients = await prisma.user.findMany({
       where: { role: "client" },
-      select: { name: true, email: true },
+      select: { id: true, name: true, email: true },
     });
 
     const clientsFormatted = clients.map((client) => ({
+      id: client.id,
       name: client.name,
       email: client.email,
     }));
@@ -286,7 +287,8 @@ class AdminController {
 
       return response.json({ message: "Cliente excluído com sucesso" });
     } catch (error) {
-      return response.json(error);
+      console.log(error);
+      return response.status(500).json({ message: error });
     }
   }
 

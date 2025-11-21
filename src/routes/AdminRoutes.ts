@@ -23,6 +23,7 @@ adminRoutes.patch("/client/:client_id", adminController.updateClient);
 adminRoutes.delete("/client/delete/:client_id", adminController.deleteClient);
 adminRoutes.post("/tech/availability", adminController.createTechAvailability);
 adminRoutes.get("/ticket", adminController.indexTickets);
+adminRoutes.get("/ticket/:ticket_id", adminController.showTicket);
 adminRoutes.patch("/ticket/:ticket_id/status", adminController.updateTicket);
 adminRoutes.delete("/ticket/:ticket_id", adminController.deleteTicket);
 export { adminRoutes };

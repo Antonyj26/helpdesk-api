@@ -368,6 +368,61 @@ class AdminController {
     });
   }
 
+  async showTicket(request: Request, response: Response) {
+    const paramSchema = z.object({
+      ticket_id: z.string().uuid({ message: "Ticket inválido" }),
+    });
+
+    const { ticket_id } = paramSchema.parse(request.params);
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticket_id },
+      select: {
+        id: true,
+        client: { select: { name: true } },
+        status: true,
+        tech: { select: { name: true, email: true } },
+        title: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+        services: {
+          select: { service: { select: { price: true, name: true } } },
+        },
+      },
+    });
+
+    if (!ticket) {
+      throw new AppError("Ticket não encontrado", 404);
+    }
+
+    // Ticket formatados ->
+
+    const services = ticket.services.map((s) => ({
+      name: s.service.name,
+      price: s.service.price,
+    }));
+
+    const total = services.reduce((acc, curr) => acc + curr.price, 0);
+
+    const ticketsFormatted = {
+      id: ticket.id,
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      client: ticket.client.name,
+      tech: ticket.tech.name,
+      email: ticket.tech.email,
+      services: services.map((s) => s.name),
+      price: services.map((s) => s.price.toString()),
+      total: total.toString(),
+      createdAt: ticket.createdAt.toLocaleDateString("pt-BR"),
+      updatedAt: ticket.updatedAt?.toLocaleDateString("pt-BR"),
+    };
+
+    return response.json(ticketsFormatted);
+  }
+
   async updateTicket(request: Request, response: Response) {
     const paramsSchema = z.object({
       ticket_id: z.string().uuid(),

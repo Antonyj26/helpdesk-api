@@ -10,6 +10,7 @@ adminRoutes.use(verifyUserAuthorization(["admin"]));
 
 adminRoutes.post("/tech", adminController.createTech);
 adminRoutes.get("/tech", adminController.indexTechs);
+adminRoutes.delete("/tech/delete/:tech_id", adminController.deleteTech);
 adminRoutes.patch("/tech/:tech_id", adminController.updateTech);
 adminRoutes.post("/service", adminController.createService);
 adminRoutes.get("/service", adminController.indexServices);
@@ -20,7 +21,7 @@ adminRoutes.delete(
 );
 adminRoutes.get("/client", adminController.clientIndex);
 adminRoutes.patch("/client/:client_id", adminController.updateClient);
-adminRoutes.delete("/client/delete/:client_id", adminController.deleteClient);
+adminRoutes.delete("/user/delete/:client_id", adminController.deleteClient);
 adminRoutes.post("/tech/availability", adminController.createTechAvailability);
 adminRoutes.get("/ticket", adminController.indexTickets);
 adminRoutes.get("/ticket/:ticket_id", adminController.showTicket);

@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { email, includes, z } from "zod";
+import { z } from "zod";
 import { prisma } from "@/database/prisma";
 import { AppError } from "@/utils/AppError";
 import { hash } from "bcrypt";
 import { TicketStatus } from "@prisma/client";
-import { title } from "process";
 
 class AdminController {
   async createTech(request: Request, response: Response) {
@@ -79,11 +78,7 @@ class AdminController {
     }
 
     const bodySchema = z.object({
-      name: z
-        .string()
-        .trim()
-        .min(2, { message: "Nome é obrigátorio" })
-        .optional(),
+      name: z.string().trim().min(2).optional(),
       email: z.string().trim().email({ message: "E-mail inválido" }).optional(),
     });
 
@@ -100,6 +95,41 @@ class AdminController {
     const { password: _, ...userWithoutPassword } = userUpdate;
 
     return response.json(userWithoutPassword);
+  }
+
+  async deleteTech(request: Request, response: Response) {
+    const paramSchema = z.object({
+      tech_id: z.string().uuid(),
+    });
+
+    const { tech_id } = paramSchema.parse(request.params);
+
+    const tech = await prisma.user.findUnique({ where: { id: tech_id } });
+
+    if (!tech) {
+      throw new AppError("Técnico não encontrado", 404);
+    }
+
+    const tickets = await prisma.ticket.findMany({
+      where: { techId: tech_id },
+      select: { id: true },
+    });
+
+    const ticketsId = tickets.map((t) => t.id);
+
+    if (ticketsId.length > 0) {
+      await prisma.ticketServices.deleteMany({
+        where: { ticketId: { in: ticketsId } },
+      });
+
+      await prisma.ticket.deleteMany({ where: { id: { in: ticketsId } } });
+    }
+
+    await prisma.techAvailability.delete({ where: { techId: tech_id } });
+
+    await prisma.user.delete({ where: { id: tech_id } });
+
+    return response.json({ message: "Técnico excluído com sucesso" });
   }
 
   async createService(request: Request, response: Response) {
@@ -287,7 +317,6 @@ class AdminController {
 
       return response.json({ message: "Cliente excluído com sucesso" });
     } catch (error) {
-      console.log(error);
       return response.status(500).json({ message: error });
     }
   }

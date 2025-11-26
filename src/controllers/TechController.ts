@@ -186,7 +186,7 @@ class techController {
 
     if (ticket.techId !== request.user.id) {
       throw new AppError(
-        "Você não tem permissaão para editar este ticket",
+        "Você não tem permissão para editar este ticket",
         401
       );
     }
